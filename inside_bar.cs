@@ -28,7 +28,11 @@ using NinjaTrader.NinjaScript.Indicators;
 
 namespace NinjaTrader.NinjaScript.Strategies {
 
-    public class InsideBar : Strategy {
+    public class BarIgnoredTest1 : Strategy {
+
+        private SMA SMA1;
+        private SMA SMA2;
+        private SMA SMA3;
 
         public int TickQty;
         public string Mini;
@@ -59,7 +63,7 @@ namespace NinjaTrader.NinjaScript.Strategies {
             if (State == State.SetDefaults) {
 
                 Description = @"Signals based off inside bar breakouts";
-                Name = "InsideBar";
+                Name = "Bar Ignored test1";
                 Email = "youremail@email.com";
                 ATRLength = 3;
                 ATRMultiplier = 2.0;
@@ -96,9 +100,13 @@ namespace NinjaTrader.NinjaScript.Strategies {
                 ////////////////////////////////////
                 // Add ES Data Series
                 ////////////////////////////////////
-                AddDataSeries ("ES 09-20", BarsPeriodType.Minute, 1); // Must update contract (12-20) when it rolls over quarterly
+                AddDataSeries ("NQ 03-21", BarsPeriodType.Minute, 1); // Must update contract (12-20) when it rolls over quarterly
 
             } else if (State == State.DataLoaded) {
+
+                SMA1                = SMA(Close, 8);
+                SMA2                = SMA(Close, 200);
+                SMA3                = SMA(Close, 20);
 
                 instrument = this.Instrument.ToString ().Substring (0, 2);
 
@@ -177,7 +185,7 @@ namespace NinjaTrader.NinjaScript.Strategies {
                     // Signals
                     ///////////////////////////////////////
 
-                    bool Inside = (High[1] < High[2]) && (Low[1] > Low[2]);
+                    bool Inside = (Low[1] > Low[2] * 0.66);
                     bool Signal = Inside;
 
                     ////////////////////////////////////
@@ -300,7 +308,14 @@ namespace NinjaTrader.NinjaScript.Strategies {
 
                                 if (Signal) {
 
-                                    if (CrossAbove (Close, High[2], 1)) {
+                                    if ((Close[2] > Open[2])
+                                         && (Open[1] > Close[1])
+                                         && (Close[0] > Open[0])
+                                         && (High[0] >= Open[1])
+                                         && (Low[0] <= Open[1])
+                                         && (Low[1] > Low[2])
+                                         && (High[1] < High[2])
+                                         && (Low[0] > SMA1[0])) {
                                         EnterLong (0, ContractQty, "entry");
                                         SignalBar = CurrentBar;
                                         Print (this.Name);
@@ -313,7 +328,14 @@ namespace NinjaTrader.NinjaScript.Strategies {
                                         BarBrush = Brushes.White;
                                     }
 
-                                    if (CrossBelow (Close, Low[2], 1)) {
+                                    if ((Close[2] < Open[2])
+                                         && (Open[1] < Close[1])
+                                         && (Close[0] < Open[0])
+                                         && (Low[1] >= Low[2])
+                                         && (High[0] <= High[1])
+                                         && (Close[0] < Open[1])
+                                         && (High[0] < SMA2[0])
+                                         && (High[0] < SMA3[0])) {
                                         EnterShort (0, ContractQty, "entry");
                                         SignalBar = CurrentBar;
                                         Print (this.Name);
